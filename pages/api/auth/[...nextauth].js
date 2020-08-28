@@ -1,6 +1,9 @@
 import NextAuth from 'next-auth';
 import Providers from 'next-auth/providers';
 
+// Lib
+import { saveUser, getUser } from '../../../lib/data';
+
 const providers = [
    Providers.GitHub({
       clientId: process.env.GITHUB_CLIENT_ID,
@@ -18,8 +21,45 @@ callbacks.signIn = async function signIn(user, account, metadata) {
    })
    const emails = await emailRes.json()
    const primaryEmail = emails.find(e => e.primary).email;
-   user.email = primaryEmail
+
+   const githubUser = {
+      id: metadata.id,
+      login: metadata.login,
+      name: metadata.name,
+      email: primaryEmail,
+      avatar: user.image
+   }
+
+   user.id = await saveUser('github', githubUser);
+   return true
 }
+
+callbacks.jwt = async function jwt(token, user) {
+   if (user) {
+      token = {
+         id: user.id
+      }
+   }
+   return token
+}
+
+callbacks.session = async function session(session, token) {
+   const dbUser = await getUser(token.id)
+   if (!dbUser) {
+     return null
+   }
+   
+   session.user = {
+     id: dbUser.id,
+     github: {
+       avatar: dbUser.github.avatar,
+       login: dbUser.github.login,
+       name: dbUser.github.name
+     }
+   }
+   
+   return session
+ }
 
 const options = {
     providers,
