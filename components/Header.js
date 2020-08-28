@@ -20,7 +20,7 @@ export default function Header () {
       </Link>
       {session ? (
          <>
-         <img src={session.user.image} className="user-info"/>
+         <img src={session.user.github.avatar} className="user-info"/>
          <a href="#" onClick={handleLogout} className="logout">Logout</a>
        </>
       ) : (
